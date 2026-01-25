@@ -6,10 +6,24 @@ module utils
 
 contains ! required when defining functions in a module
 
+   !> @brief Prints a horizontal separator line to stdout.
+   !>
+   !> Outputs a line of dashes for visual separation in console output.
    subroutine print_separator()
       print *, '----------------------------------------'
    end subroutine print_separator
 
+   !> @brief Writes a 2D array of real values to a CSV file.
+   !>
+   !> Creates or overwrites a CSV file with the provided data. Each row of
+   !> the input array becomes a line in the output file, with values
+   !> separated by commas.
+   !>
+   !> @param[in] filename Path to the output CSV file.
+   !> @param[in] data     2D array of real values to write.
+   !>
+   !> @note The file is created with 'replace' status, overwriting any
+   !>       existing file with the same name.
    subroutine write_csv(filename, data)
       character(len=*), intent(in) :: filename
       real, intent(in) :: data(:, :)

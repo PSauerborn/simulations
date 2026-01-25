@@ -17,7 +17,18 @@ module types
    end type PointParticle
 
 contains
-   ! constructor for PointParticle type
+
+   !> @brief Constructs a new PointParticle instance.
+   !>
+   !> Factory function to create and initialize a PointParticle with the
+   !> specified physical properties.
+   !>
+   !> @param[in] pos    Initial 3D position vector (m).
+   !> @param[in] vel    Initial 3D velocity vector (m/s).
+   !> @param[in] mass   Mass of the particle (kg).
+   !> @param[in] charge Electric charge of the particle (C).
+   !>
+   !> @return p A fully initialized PointParticle instance.
    function new_point_particle(pos, vel, mass, charge) result(p)
       real, intent(in) :: pos(3)
       real, intent(in) :: vel(3)

@@ -8,6 +8,18 @@ module helical_motion
    public :: run_helical_motion_simulation ! export the function
 
 contains ! required when defining functions in a module
+
+   !> @brief Calculates the total force acting on a charged particle.
+   !>
+   !> Computes the combined force from Lorentz (electromagnetic) force and
+   !> Earth's gravitational force acting on a charged particle.
+   !>
+   !> @param[in] charge     Electric charge of the particle (C).
+   !> @param[in] mass       Mass of the particle (kg).
+   !> @param[in] velocity   3D velocity vector of the particle (m/s).
+   !> @param[in] magnetic_field 3D magnetic field vector (T).
+   !>
+   !> @return force 3D force vector (N).
    pure function get_force(charge, mass, velocity, magnetic_field) result(force)
       real, intent(in) :: charge
       real, intent(in) :: mass
@@ -20,6 +32,19 @@ contains ! required when defining functions in a module
 
    end function get_force
 
+   !> @brief Computes one timestep of trajectory evolution using velocity Verlet.
+   !>
+   !> Updates the particle's mechanical state (position and velocity) by one
+   !> time step using the velocity Verlet integration scheme, which provides
+   !> better energy conservation than simple Euler integration.
+   !>
+   !> @param[in] magnetic_field 3D magnetic field vector (T).
+   !> @param[in] charge         Electric charge of the particle (C).
+   !> @param[in] mass           Mass of the particle (kg).
+   !> @param[in] initial_state  Starting mechanical state (position, velocity).
+   !> @param[in] delta_t        Time step size (s).
+   !>
+   !> @return final_state Updated mechanical state after one time step.
    pure function calculate_trajectory_update(magnetic_field, charge, mass, initial_state, delta_t) result(final_state)
       real, intent(in) :: charge
       real, intent(in) :: mass
@@ -45,7 +70,18 @@ contains ! required when defining functions in a module
 
    end function calculate_trajectory_update
 
-! pure functions are functions that do not have side effects such as printing to the console
+   !> @brief Runs a helical motion simulation for a charged particle.
+   !>
+   !> Simulates the trajectory of a charged point particle in a constant
+   !> magnetic field over multiple time steps. The particle experiences
+   !> both the Lorentz force and gravitational force.
+   !>
+   !> @param[in] particle       PointParticle containing initial state and properties.
+   !> @param[in] magnetic_field 3D magnetic field vector (T).
+   !> @param[in] delta_t        Time step size (s).
+   !> @param[in] num_steps      Number of simulation steps to run.
+   !>
+   !> @return trajectory 2D array (num_steps x 3) of position coordinates.
    pure function run_helical_motion_simulation(particle, magnetic_field, delta_t, num_steps) result(trajectory)
       type(PointParticle), intent(in) :: particle
       real, intent(in) :: magnetic_field(3)

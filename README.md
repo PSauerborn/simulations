@@ -79,7 +79,7 @@ mass = 1.0
 charge = 1.0
 delta_t = 0.01
 num_steps = 5000
-output_file = "output/helical_motion.csv"
+output_dir = "output"
 /
 ```
 
@@ -97,7 +97,7 @@ The project uses an `index.json` file to define available simulations. This acts
             "name": "Charged Particle in a constant magnetic field",
             "entrypoint": "helical_motion_simulation",
             "output_type": "trajectory",
-            "output_path": "output/helical_motion.csv",
+            "output_path": "helical_motion_trajectory.csv",
             "dimensions": 3,
             "description": "Model to simulate a charged particle moving in a magnetic field."
         }
@@ -144,10 +144,42 @@ This command:
 2. Runs the simulation inside the container
 3. Mounts the local `output/` directory so results are saved to your host machine
 
-Output artifacts are written to `output/` and include:
-- **CSV data files**: Raw simulation output (e.g., trajectory coordinates)
-- **Log files**: Simulation run logs with timestamps (e.g., `helical_motion_simulation_1737817200.log`)
-- **Plot images**: Visualizations of the results (e.g., `helical_motion_simulation_1737817200.png`)
+#### Output Structure
+
+Simulation outputs are organized in a hierarchical, partitioned directory structure under `output/`:
+
+```
+output/
+└── id={simulation_id}/
+    └── ts={unix_timestamp}/
+        ├── {output_filename}.csv    # Raw simulation data
+        ├── simulation.log           # Simulation run log
+        └── trajectory_*.png         # Generated plot images (multiple views)
+```
+
+For example, running `helical_motion_simulation` produces:
+
+```
+output/
+└── id=helical_motion_simulation/
+    └── ts=1737817200/
+        ├── helical_motion_trajectory.csv
+        ├── simulation.log
+        ├── trajectory_isometric.png
+        ├── trajectory_front_xz.png
+        ├── trajectory_side_yz.png
+        └── trajectory_top_xy.png
+```
+
+Each run creates a new timestamped directory, preserving outputs from previous runs for comparison.
+
+**Output artifacts include:**
+
+| File | Description |
+|------|-------------|
+| `*.csv` | Raw simulation output data (e.g., trajectory coordinates) |
+| `simulation.log` | Captured stdout from the Fortran simulation execution |
+| `trajectory_*.png` | 3D trajectory visualizations from multiple viewing angles |
 
 ### Running Locally (via fpm)
 

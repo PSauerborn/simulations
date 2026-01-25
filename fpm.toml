@@ -1,0 +1,18 @@
+name = "simulations"
+version = "0.1.0"
+license = "license"
+author = "PSauerborn"
+maintainer = "pascal.sauerborn@gmail.com"
+copyright = "Copyright 2026, PSauerborn"
+[build]
+auto-executables = true
+auto-tests = true
+auto-examples = true
+module-naming = false
+[install]
+library = false
+test = false
+[fortran]
+implicit-typing = false
+implicit-external = false
+source-form = "free"

@@ -1,0 +1,13 @@
+{
+    "simulations": [
+        {
+            "id": "helical_motion_simulation",
+            "name": "Charged Particle in a constant magnetic field",
+            "entrypoint": "helical_motion_simulation",
+            "output_type": "trajectory",
+            "output_path": "output/helical_motion.csv",
+            "dimensions": 3,
+            "description": "Model to simulate a charged particle moving in a magnetic field. Gravity is included to model horizontal drift."
+        }
+    ]
+}

@@ -7,7 +7,7 @@ Source code for Fortran simulations served by the simulation catalogue. This pro
 - [Project Overview](#project-overview)
   - [Current Simulations](#current-simulations)
 - [Project Structure](#project-structure)
-- [Configuration (Namelists)](#configuration-namelists)
+- [Configuration (TOML)](#configuration-toml)
 - [Simulation Index](#simulation-index)
 - [Make Commands](#make-commands)
 - [Running Simulations](#running-simulations)
@@ -20,7 +20,7 @@ Source code for Fortran simulations served by the simulation catalogue. This pro
 
 This repository contains Fortran-based simulations for modeling physical phenomena. The simulations are designed to be:
 
-- **Configurable**: Simulation parameters are externalized through namelist files (`.nml`) for easy tuning without recompilation
+- **Configurable**: Simulation parameters are externalized through TOML configuration files (`.toml`) for easy tuning without recompilation
 - **Modular**: Core physics modules are separated from simulation entry points for reusability
 - **Visualizable**: A Python utility script (`run_and_plot.py`) enables running simulations and visualizing output data
 
@@ -38,8 +38,8 @@ simulations/
 │   └── helical_motion_simulation.f90
 ├── bin/                # Compiled binaries (generated)
 ├── build/              # Build artifacts (generated)
-├── etc/                # Configuration files (namelists)
-│   └── helical_motion.nml
+├── etc/                # Configuration files (TOML)
+│   └── helical_motion.toml
 ├── output/             # Simulation output artifacts
 │   ├── *.csv           # Generated trajectory data
 │   ├── *.log           # Simulation run logs
@@ -62,28 +62,48 @@ simulations/
 
 ### Key Directories
 
-- **`etc/`** — Contains namelist (`.nml`) files used to configure simulations. These files define parameters such as initial conditions, physical constants, and output settings without requiring code changes.
+- **`etc/`** — Contains TOML (`.toml`) configuration files used to configure simulations. These files define parameters such as initial conditions, physical constants, and output settings without requiring code changes.
 
 - **`output/`** — Stores simulation output artifacts, typically CSV files containing trajectory data or other computed results. This directory is populated when simulations are executed.
 
-## Configuration (Namelists)
+## Configuration (TOML)
 
-Simulations are configured using Fortran namelist files stored in `etc/`. For example, `etc/helical_motion.nml`:
+Simulations are configured using TOML files stored in `etc/`. For example, `etc/helical_motion.toml`:
 
-```fortran
-&params
-initial_velocity = 2.0, 0.0, 5.0
-initial_position = 0.0, 0.0, 0.0
-magnetic_field = 0.5, 0.0, 0.0
+```toml
+[parameters]
+initial_velocity = [2.0, 0.0, 5.0]
+initial_position = [0.0, 0.0, 0.0]
+magnetic_field = [0.5, 0.0, 0.0]
 mass = 1.0
 charge = 1.0
 delta_t = 0.01
 num_steps = 5000
+
+[config]
 output_dir = "output"
-/
 ```
 
+The configuration is organized into sections:
+
+| Section | Description |
+|---------|-------------|
+| `[parameters]` | Physical simulation parameters (initial conditions, particle properties, simulation settings) |
+| `[config]` | Output and runtime configuration |
+
 Modify these files to adjust simulation parameters without rebuilding the code.
+
+### Command-Line Override
+
+Each simulation accepts an optional command-line argument specifying the path to the TOML configuration file. If no argument is provided, the simulation uses its default config path (e.g., `etc/helical_motion.toml` for the helical motion simulation).
+
+```bash
+# Run with default config
+fpm run --target helical_motion_simulation
+
+# Run with custom config path
+fpm run --target helical_motion_simulation -- /path/to/custom_config.toml
+```
 
 ## Simulation Index
 
@@ -189,8 +209,11 @@ If you have the required dependencies installed locally, you can use `fpm` direc
 # Build all simulations
 fpm build
 
-# Run a specific simulation
+# Run a specific simulation (uses default config)
 fpm run --target helical_motion_simulation
+
+# Run with a custom config file
+fpm run --target helical_motion_simulation -- etc/helical_motion.toml
 
 # Run with the Python visualization wrapper
 python run_and_plot.py --simulation_id helical_motion_simulation

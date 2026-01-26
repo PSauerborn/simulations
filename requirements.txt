@@ -1,5 +1,6 @@
-pydantic
-matplotlib
-polars
-fpm
-structlog
+pydantic==2.12.5
+matplotlib==3.10.8
+polars==1.36.1
+fpm==0.12.0
+structlog==25.5.0
+toml==0.10.2

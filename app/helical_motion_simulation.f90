@@ -1,34 +1,32 @@
 program helical_motion_simulation
    use utils
    use helical_motion
+   use config
    use types
    use constants
+   use tomlf
 
    implicit none
 
    ! properties of point particle
-   real :: initial_velocity(3) = [3.0, 0.0, 0.0]
-   real :: initial_position(3) = [0.0, 0.0, 0.0]
-   real :: charge = -1.0*e
-   real :: mass = mass_proton
-
+   real, allocatable :: initial_velocity(:)
+   real, allocatable :: initial_position(:)
+   real, allocatable :: magnetic_field(:)
+   real :: charge
+   real :: mass
    ! properties of output
-   character(len=256) :: output_dir = 'output', output_filename = 'helical_motion_trajectory.csv', output_path
-   character(len=256) :: output_dir_override
-
+   character(len=:), allocatable :: output_dir
+   character(len=256) :: output_filename
    ! properties of simulation
-   real :: magnetic_field(3) = [0.0, 0.0, 1.0]
-   real :: delta_t = 0.01
-   integer :: num_steps = 1000
+   real :: delta_t
+   integer :: num_steps
 
    type(PointParticle) :: p
 
    real, allocatable :: trajectory(:, :)
    allocate (trajectory(num_steps, 3))
 
-   ! read and set configuration settings. this includes
-   ! settings on where to store output files.
-   call read_config('etc/helical_motion.nml')
+   call load_config()
 
    ! create new point particle instance and run simulation
    p = new_point_particle(initial_position, initial_velocity, mass, charge)
@@ -43,73 +41,81 @@ program helical_motion_simulation
    ! run simulation and calculate trajectory
    trajectory = run_helical_motion_simulation(p, magnetic_field, delta_t, num_steps)
 
+   output_filename = trim(output_dir)//'/'//'trajectory.csv'
    ! write trajectory to output file
-   print *, 'Writing output to: ', output_path
-   call write_csv(output_path, trajectory)
+   print *, 'Writing output to: ', output_filename
+   call write_csv(output_filename, trajectory)
 
    print *, 'Simulation finished'
 
 contains
-   !> @brief Reads simulation configuration from a namelist file.
+   !> @brief Reads simulation configuration from a TOML config file.
    !>
-   !> Loads simulation parameters from the specified namelist file, including
-   !> particle properties, magnetic field settings, and output configuration.
-   !> The output directory can be overridden via command-line argument.
+   !> Loads simulation parameters from a TOML configuration file, including:
+   !> - Particle properties: initial_velocity, initial_position, charge, mass
+   !> - Magnetic field settings: magnetic_field vector
+   !> - Simulation parameters: delta_t (time step), num_steps (iteration count)
+   !> - Output configuration: output_dir
    !>
-   !> @param[in] filepath Path to the namelist configuration file.
+   !> The default config path is 'etc/helical_motion.toml', which can be
+   !> overridden by providing a path as the first command-line argument.
    !>
-   !> @note If a command-line argument is provided, it overrides the output_dir
-   !>       setting from the namelist file. The final output_path is constructed
-   !>       by combining the output directory with the output filename.
+   !> @note If a command-line argument is provided, it specifies the path to
+   !>       the TOML configuration file to use instead of the default.
    !>
-   !> @warning Terminates execution if the configuration file does not exist.
-   subroutine read_config(filepath)
-      character(len=*), intent(in) :: filepath
-      integer :: num_args
+   !> @warning Terminates execution with an error if the configuration file
+   !>          cannot be loaded or contains invalid configuration.
+   subroutine load_config()
+      character(len=256) :: config_path = 'etc/helical_motion.toml'
+      integer :: n_args, stat
+      ! parsed toml configuration
+      type(toml_table), allocatable :: table
+      type(toml_error), allocatable :: error
+      type(toml_table), pointer :: parameters_section, config_section ! these need to be pointers
 
-      namelist /params/ &
-         initial_velocity, &
-         initial_position, &
-         charge, &
-         mass, &
-         magnetic_field, &
-         delta_t, &
-         num_steps, &
-         output_dir
+      ! get command line arguments. config path is first argument
+      ! if no arguments are provided, use default config path
+      n_args = command_argument_count()
+      if (n_args > 0) then
+         call get_command_argument(1, config_path)
+      end if
 
-      logical :: file_exists
-      integer :: fu
-      integer :: rc
-
-      print *, 'Reading input parameters from: ', filepath
-
-      ! check if input file exists
-      inquire (file=filepath, exist=file_exists)
-      if (.not. file_exists) then
-         print *, 'Error: input file not found: ', filepath
+      call toml_load(table, config_path, error=error)
+      ! allocated checks if the array has been allocated a length,
+      ! which occurs if any errors are added.
+      if (allocated(error)) then
+         print '(a)', error%message
          stop 1
       end if
 
-      ! open and read input file
-      open (newunit=fu, file=filepath, action='read')
-      read (nml=params, iostat=rc, unit=fu)
-      close (fu)
-
-      ! check if output directory has been overridden by command line argument
-      num_args = command_argument_count()
-      if (num_args > 0) then
-         call get_command_argument(1, output_dir_override)
-         print *, 'Overriding configured output dir: ', output_dir_override
-      else
-         output_dir_override = ""
-      end if
-      ! set output path
-      if (len_trim(output_dir_override) > 0) then
-         output_path = trim(output_dir_override)//'/'//trim(output_filename)
-      else
-         output_path = trim(output_dir)//'/'//trim(output_filename)
+      ! get specific sections of configuration file
+      call get_value(table, "parameters", parameters_section, stat=stat)
+      if (stat /= 0) then
+         print *, 'Error: invalid configuration'
+         stop 1
       end if
 
-   end subroutine read_config
+      call get_value(table, "config", config_section, stat=stat)
+      if (stat /= 0) then
+         print *, 'Error: invalid configuration'
+         stop 1
+      end if
 
+      ! get array values containing initial positions, velocity and fields
+      call expect_real_array_value(parameters_section, "initial_velocity", initial_velocity)
+      call expect_real_array_value(parameters_section, "initial_position", initial_position)
+      call expect_real_array_value(parameters_section, "magnetic_field", magnetic_field)
+
+      ! get parameters for charge and mass
+      call expect_real_value(parameters_section, "charge", charge)
+      call expect_real_value(parameters_section, "mass", mass)
+
+      ! get parameters for simulation
+      call expect_real_value(parameters_section, "delta_t", delta_t)
+      call expect_integer_value(parameters_section, "num_steps", num_steps)
+
+      ! get configuration settings
+      call expect_char_value(config_section, "output_dir", output_dir)
+
+   end subroutine load_config
 end program helical_motion_simulation

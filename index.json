@@ -4,9 +4,14 @@
             "id": "helical_motion_simulation",
             "name": "Charged Particle in a constant magnetic field",
             "entrypoint": "helical_motion_simulation",
-            "output_type": "trajectory",
-            "output_path": "helical_motion_trajectory.csv",
-            "dimensions": 3,
+            "config_path": "etc/helical_motion.toml",
+            "outputs": [
+                {
+                    "type": "trajectory",
+                    "dimensions": 3,
+                    "filename": "trajectory.csv"
+                }
+            ],
             "description": "Model to simulate a charged particle moving in a magnetic field. Gravity is included to model horizontal drift."
         }
     ]

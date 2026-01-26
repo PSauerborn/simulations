@@ -1,4 +1,7 @@
 module utils
+   use csv_module
+   use types
+
    implicit none
    private ! hide all variables
 
@@ -13,33 +16,50 @@ contains ! required when defining functions in a module
       print *, '----------------------------------------'
    end subroutine print_separator
 
-   !> @brief Writes a 2D array of real values to a CSV file.
+   !> @brief Writes CSV data to a file using the csv-fortran library.
    !>
-   !> Creates or overwrites a CSV file with the provided data. Each row of
-   !> the input array becomes a line in the output file, with values
-   !> separated by commas.
+   !> Creates or overwrites a CSV file with the provided data. The output
+   !> includes a header row followed by the data values. Each row of the
+   !> values array becomes a line in the output file.
    !>
-   !> @param[in] filename Path to the output CSV file.
-   !> @param[in] data     2D array of real values to write.
+   !> @param[in] output   CSVOutput instance containing filename, header, and values.
+   !> @param[in] real_fmt Optional format string for real numbers (default: '(F12.6)').
    !>
    !> @note The file is created with 'replace' status, overwriting any
    !>       existing file with the same name.
-   subroutine write_csv(filename, data)
-      character(len=*), intent(in) :: filename
-      real, intent(in) :: data(:, :)
+   subroutine write_csv(output, real_fmt)
+      type(CSVOutput) :: output
+      character(len=*), intent(in), optional :: real_fmt
+
       integer :: i
-      integer :: num_rows
-      integer :: nu
+      integer :: num_rows, column_count
 
-      num_rows = size(data, 1)
+      type(csv_file) :: f
+      logical :: status_ok
+      character(len=20) :: fmt_str
 
-      open (newunit=nu, file=filename, status='replace', action='write')
+      ! Set default format if not provided
+      if (present(real_fmt)) then
+         fmt_str = real_fmt
+      else
+         fmt_str = '(F12.6)'
+      end if
+
+      num_rows = size(output%values, 1)
+      column_count = size(output%values, 2)
+
+      call f%initialize(verbose=.true.)
+      call f%open(output%filename, n_cols=column_count, status_ok=status_ok)
+      ! add CSV header row
+      call f%add(output%header)
+      call f%next_row()
+
       do i = 1, num_rows
-         write (nu, '(2(f0.3, ","), f0.3)') data(i, :)
+         call f%add(output%values(i, :), real_fmt=fmt_str)
+         call f%next_row()
       end do
 
-      close (nu)
-
+      call f%close(status_ok)
    end subroutine write_csv
 
 end module utils

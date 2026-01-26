@@ -10,6 +10,7 @@ Source code for Fortran simulations served by the simulation catalogue. This pro
 - [Configuration (TOML)](#configuration-toml)
 - [Simulation Index](#simulation-index)
 - [Make Commands](#make-commands)
+- [Building Executables](#building-executables)
 - [Running Simulations](#running-simulations)
   - [Using Docker (Recommended)](#using-docker-recommended)
   - [Running Locally (via fpm)](#running-locally-via-fpm)
@@ -50,8 +51,11 @@ simulations/
 │   ├── helical_motion.f90  # Helical motion physics
 │   ├── types.f90       # Custom data types
 │   └── utils.f90       # Utility functions
+├── scripts/            # Build and utility scripts
+│   └── build_executables.sh  # Builds executables with arch suffix
 ├── .dockerignore       # Files excluded from Docker build
-├── Dockerfile          # Docker image definition
+├── Dockerfile          # Runtime Docker image
+├── Dockerfile.build    # Build Docker image for compiling executables
 ├── fpm.toml            # Fortran Package Manager configuration
 ├── index.json          # Simulation catalogue index
 ├── Makefile            # Development and run commands
@@ -146,7 +150,43 @@ The project includes the following Make commands:
 | Command | Description |
 |---------|-------------|
 | `make lint` | Runs code formatting tools: `fprettify` for Fortran source files and `black` for Python files |
+| `make build` | Compiles simulation executables inside Docker and outputs them to `bin/` with architecture suffix |
 | `make run-simulation simulation_id=<id>` | Builds and runs a simulation inside Docker, outputting results to `output/` |
+
+## Building Executables
+
+The project includes a Docker-based build system for compiling standalone executables, useful for deployment or distribution.
+
+### Build Command
+
+```bash
+make build
+```
+
+This command:
+1. Builds a Docker image with all compilation dependencies (gfortran, fpm)
+2. Compiles all simulation executables inside the container
+3. Copies the resulting binaries to the local `bin/` directory with an architecture suffix
+
+### Output
+
+Executables are placed in `bin/` with the host CPU architecture appended:
+
+```
+bin/
+└── helical_motion_simulation_aarch64    # ARM64 (Apple Silicon, etc.)
+# or
+└── helical_motion_simulation_x86_64     # x86-64 (Intel/AMD)
+```
+
+The architecture suffix is automatically detected from the build environment using `uname -m`.
+
+### Build Script
+
+The build process is handled by `scripts/build_executables.sh`, which:
+1. Creates necessary directories (`bin/`, `temp/`)
+2. Runs `fpm install` to compile executables into a temp directory
+3. Copies each executable to `bin/` with the CPU architecture suffix
 
 ## Running Simulations
 

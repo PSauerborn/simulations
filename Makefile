@@ -10,8 +10,21 @@ scan-secrets:
 	detect-secrets scan > .secrets.baseline
 	detect-secrets audit .secrets.baseline
 
-simulation_id ?= $(error 'simulation_id' is not set)
 working_dir ?= $(shell pwd)
+
+.PHONY: build
+build:
+	docker build \
+		--pull \
+		-t simulations-build \
+		-f Dockerfile.build \
+		.
+	docker run --rm \
+		-v ${working_dir}/bin:/build/bin \
+		simulations-build
+
+
+simulation_id ?= $(error 'simulation_id' is not set)
 
 .PHONY: run-simulation
 run-simulation:

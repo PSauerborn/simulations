@@ -22,3 +22,4 @@ source-form = "free"
 
 [dependencies]
 toml-f = { git = "https://github.com/toml-f/toml-f", tag = "v0.4.3" }
+csv-fortran = { git="https://github.com/jacobwilliams/csv-fortran.git", tag="3.0.0" }

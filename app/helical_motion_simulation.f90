@@ -22,10 +22,13 @@ program helical_motion_simulation
    integer :: num_steps
 
    type(PointParticle) :: p
+   type(CSVOutput) :: csv
 
    real, allocatable :: trajectory(:, :)
    allocate (trajectory(num_steps, 3))
 
+   ! read TOML configuration file and set values
+   ! for all required parameters
    call load_config()
 
    ! create new point particle instance and run simulation
@@ -41,10 +44,13 @@ program helical_motion_simulation
    ! run simulation and calculate trajectory
    trajectory = run_helical_motion_simulation(p, magnetic_field, delta_t, num_steps)
 
-   output_filename = trim(output_dir)//'/'//'trajectory.csv'
+   csv%filename = trim(output_dir)//'/'//'trajectory.csv'
+   csv%header = ["x1", "x2", "x3"]
+   csv%values = trajectory
+
    ! write trajectory to output file
-   print *, 'Writing output to: ', output_filename
-   call write_csv(output_filename, trajectory)
+   print *, 'Writing output to: ', csv%filename
+   call write_csv(csv)
 
    print *, 'Simulation finished'
 
@@ -88,13 +94,14 @@ contains
          stop 1
       end if
 
-      ! get specific sections of configuration file
+      ! parameters section contains simulation params
       call get_value(table, "parameters", parameters_section, stat=stat)
       if (stat /= 0) then
          print *, 'Error: invalid configuration'
          stop 1
       end if
 
+      ! config section contains configuration settings
       call get_value(table, "config", config_section, stat=stat)
       if (stat /= 0) then
          print *, 'Error: invalid configuration'

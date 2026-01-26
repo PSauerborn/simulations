@@ -2,7 +2,7 @@ module types
    implicit none
    private ! hide all variables
 
-   public :: MechanicalState, PointParticle, new_point_particle
+   public :: MechanicalState, PointParticle, CSVOutput, new_point_particle, new_csv_output
 
    type :: MechanicalState
       real :: position(3)
@@ -16,7 +16,35 @@ module types
       real :: charge = 0.0
    end type PointParticle
 
+   type :: CSVOutput
+      character(len=:), allocatable :: filename
+      character(len=:), allocatable :: header(:)
+      real, allocatable :: values(:, :)
+   end type CSVOutput
+
 contains
+
+   !> @brief Constructs a new CSVOutput instance.
+   !>
+   !> Factory function to create and initialize a CSVOutput with the
+   !> specified filename, header row, and data values.
+   !>
+   !> @param[in] filename Path to the output CSV file.
+   !> @param[in] header   Array of column header strings.
+   !> @param[in] values   2D array of real values (rows x columns).
+   !>
+   !> @return out A fully initialized CSVOutput instance.
+   function new_csv_output(filename, header, values) result(out)
+      character(len=*), intent(in) :: filename
+      character(len=*), intent(in) :: header(:)
+      real, intent(in) :: values(:, :)
+
+      type(CSVOutput) :: out
+
+      out%values = values
+      out%filename = filename
+      out%header = header
+   end function new_csv_output
 
    !> @brief Constructs a new PointParticle instance.
    !>

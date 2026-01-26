@@ -12,24 +12,24 @@ program helical_motion_simulation
    real, allocatable :: initial_velocity(:)
    real, allocatable :: initial_position(:)
    real, allocatable :: magnetic_field(:)
+   real, allocatable :: trajectory(:, :)
+
    real :: charge
    real :: mass
-   ! properties of output
-   character(len=:), allocatable :: output_dir
-   character(len=256) :: output_filename
-   ! properties of simulation
    real :: delta_t
    integer :: num_steps
+
+   character(len=:), allocatable :: output_dir
 
    type(PointParticle) :: p
    type(CSVOutput) :: csv
 
-   real, allocatable :: trajectory(:, :)
-   allocate (trajectory(num_steps, 3))
-
    ! read TOML configuration file and set values
    ! for all required parameters
    call load_config()
+
+   ! allocate trajectory array
+   allocate (trajectory(num_steps, 3))
 
    ! create new point particle instance and run simulation
    p = new_point_particle(initial_position, initial_velocity, mass, charge)

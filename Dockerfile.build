@@ -1,8 +1,8 @@
 FROM debian:bookworm
 
-ARG CPU_ARCH
-
 WORKDIR /build
+
+ARG CPU_ARCH
 
 RUN apt-get update && apt-get install -y \
     build-essential \
@@ -24,4 +24,6 @@ COPY scripts ./scripts
 
 RUN chmod +x ./scripts/build_executables.sh
 
-CMD ["./scripts/build_executables.sh", "${CPU_ARCH}"]
+ENV CPU_ARCH=${CPU_ARCH}
+
+CMD ["/bin/bash", "-c", "./scripts/build_executables.sh ${CPU_ARCH}"]

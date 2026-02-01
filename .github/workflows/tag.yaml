@@ -65,5 +65,5 @@ jobs:
             echo "No changes to commit"
           else
             git commit -m "Add compiled binaries for $(git describe --tags --abbrev=0 || echo 'release')"
-            git push origin main
+            git push origin master
           fi

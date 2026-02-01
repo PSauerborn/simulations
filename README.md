@@ -25,6 +25,8 @@ This repository contains Fortran-based simulations for modeling physical phenome
 - **Modular**: Core physics modules are separated from simulation entry points for reusability
 - **Visualizable**: A Python utility script (`run_and_plot.py`) enables running simulations and visualizing output data
 
+All of the simulations in this repository can be explored interactively via the [Simulation Catalogue](https://github.com/psauerborn/simulation-catalogue).
+
 ### Current Simulations
 
 | Simulation | Description |

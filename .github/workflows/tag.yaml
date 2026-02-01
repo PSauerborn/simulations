@@ -1,0 +1,69 @@
+name: Build and Commit Binaries
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        cpu_arch: [arm64, amd64]
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and Extract Binaries
+        run: make build cpu_arch=${{ matrix.cpu_arch }}
+
+      - name: Upload Binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: binaries-${{ matrix.cpu_arch }}
+          path: bin/
+
+  commit:
+    name: Commit Binaries
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: bin-artifacts
+
+      - name: Move binaries to bin directory
+        run: |
+          mkdir -p bin
+          cp bin-artifacts/binaries-arm64/* bin/
+          cp bin-artifacts/binaries-amd64/* bin/
+          rm -rf bin-artifacts
+
+      - name: Commit and Push
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add bin/
+          # Only commit if there are changes
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Add compiled binaries for $(git describe --tags --abbrev=0 || echo 'release')"
+            git push origin main
+          fi

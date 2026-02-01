@@ -1,7 +1,8 @@
 #!/bin/bash
+set -e
 
 # CPU architecture of the host system
-cpu_arch=$(uname -m)
+cpu_arch=$1
 
 mkdir -p bin temp
 # Build executables

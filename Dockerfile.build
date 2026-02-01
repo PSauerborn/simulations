@@ -1,5 +1,7 @@
 FROM debian:bookworm
 
+ARG CPU_ARCH
+
 WORKDIR /build
 
 RUN apt-get update && apt-get install -y \
@@ -22,4 +24,4 @@ COPY scripts ./scripts
 
 RUN chmod +x ./scripts/build_executables.sh
 
-CMD ["./scripts/build_executables.sh"]
+CMD ["./scripts/build_executables.sh", "${CPU_ARCH}"]

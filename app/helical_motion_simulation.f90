@@ -109,20 +109,20 @@ contains
       end if
 
       ! get array values containing initial positions, velocity and fields
-      call expect_real_array_value(parameters_section, "initial_velocity", initial_velocity)
-      call expect_real_array_value(parameters_section, "initial_position", initial_position)
-      call expect_real_array_value(parameters_section, "magnetic_field", magnetic_field)
+      call read_config_value(parameters_section, "initial_velocity", initial_velocity)
+      call read_config_value(parameters_section, "initial_position", initial_position)
+      call read_config_value(parameters_section, "magnetic_field", magnetic_field)
 
       ! get parameters for charge and mass
-      call expect_real_value(parameters_section, "charge", charge)
-      call expect_real_value(parameters_section, "mass", mass)
+      call read_config_value(parameters_section, "charge", charge)
+      call read_config_value(parameters_section, "mass", mass)
 
       ! get parameters for simulation
-      call expect_real_value(parameters_section, "delta_t", delta_t)
-      call expect_integer_value(parameters_section, "num_steps", num_steps)
+      call read_config_value(parameters_section, "delta_t", delta_t)
+      call read_config_value(parameters_section, "num_steps", num_steps)
 
       ! get configuration settings
-      call expect_char_value(config_section, "output_dir", output_dir)
+      call read_config_value(config_section, "output_dir", output_dir)
 
    end subroutine load_config
 end program helical_motion_simulation

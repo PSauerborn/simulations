@@ -1,10 +1,12 @@
 program helical_motion_simulation
    use utils
-   use helical_motion
    use config
    use types
    use constants
    use tomlf
+   use forces
+   use integrators
+   use helical_motion
 
    implicit none
 
@@ -12,37 +14,54 @@ program helical_motion_simulation
    real, allocatable :: initial_velocity(:)
    real, allocatable :: initial_position(:)
    real, allocatable :: magnetic_field(:)
+   real, allocatable :: electric_field(:)
    real, allocatable :: trajectory(:, :)
 
    real :: charge
    real :: mass
    real :: delta_t
    integer :: num_steps
+   integer :: i
 
    character(len=:), allocatable :: output_dir
 
    type(PointParticle) :: p
    type(CSVOutput) :: csv
+   type(verlet_t) :: integrator
+   type(helical_motion_force) :: force
 
    ! read TOML configuration file and set values
-   ! for all required parameters
+   ! for all required parameters. this MUST be done
+   ! first to ensure that simulation parameters are loaded
+   ! into memory.
    call load_config()
 
    ! allocate trajectory array
    allocate (trajectory(num_steps, 3))
 
-   ! create new point particle instance and run simulation
-   p = new_point_particle(initial_position, initial_velocity, mass, charge)
-
    call print_separator()
    print *, 'Running helical motion simulation'
    print *, 'Using magnetic field: ', magnetic_field
+   print *, 'Using electric field: ', electric_field
    print *, 'Using initial velocity: ', initial_velocity
    print *, 'Using initial position: ', initial_position
    print *, 'Using particle charge: ', charge
 
-   ! run simulation and calculate trajectory
-   trajectory = run_helical_motion_simulation(p, magnetic_field, delta_t, num_steps)
+   ! use verlet integrator
+   integrator = new_verlet_integrator(delta_t)
+   ! create new point particle instance
+   p = new_point_particle(initial_position, initial_velocity, mass, charge)
+   ! set properties of magnetic and electric field
+   force%magnetic_field = magnetic_field
+   force%electric_field = electric_field
+
+   ! perform numerical integration using verlet operator
+   ! and helical motion force
+   do i = 1, num_steps
+      call integrator%integrate_step(p, force)
+      ! add updated position to trajectory list
+      trajectory(i, :) = p%state%position
+   end do
 
    csv%filename = trim(output_dir)//'/'//'trajectory.csv'
    csv%header = ["x1", "x2", "x3"]
@@ -109,20 +128,21 @@ contains
       end if
 
       ! get array values containing initial positions, velocity and fields
-      call expect_real_array_value(parameters_section, "initial_velocity", initial_velocity)
-      call expect_real_array_value(parameters_section, "initial_position", initial_position)
-      call expect_real_array_value(parameters_section, "magnetic_field", magnetic_field)
+      call read_config_value(parameters_section, "initial_velocity", initial_velocity)
+      call read_config_value(parameters_section, "initial_position", initial_position)
+      call read_config_value(parameters_section, "magnetic_field", magnetic_field)
+      call read_config_value(parameters_section, "electric_field", electric_field)
 
       ! get parameters for charge and mass
-      call expect_real_value(parameters_section, "charge", charge)
-      call expect_real_value(parameters_section, "mass", mass)
+      call read_config_value(parameters_section, "charge", charge)
+      call read_config_value(parameters_section, "mass", mass)
 
       ! get parameters for simulation
-      call expect_real_value(parameters_section, "delta_t", delta_t)
-      call expect_integer_value(parameters_section, "num_steps", num_steps)
+      call read_config_value(parameters_section, "delta_t", delta_t)
+      call read_config_value(parameters_section, "num_steps", num_steps)
 
       ! get configuration settings
-      call expect_char_value(config_section, "output_dir", output_dir)
+      call read_config_value(config_section, "output_dir", output_dir)
 
    end subroutine load_config
 end program helical_motion_simulation

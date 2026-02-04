@@ -1,106 +1,51 @@
 module helical_motion
-   use types
    use forces
+   use types
 
    implicit none
-   private ! hide all variables
+   private
 
-   public :: run_helical_motion_simulation ! export the function
+   public :: helical_motion_force
 
-contains ! required when defining functions in a module
-
-   !> @brief Calculates the total force acting on a charged particle.
+   !> @brief Composite force for helical motion simulation.
    !>
-   !> Computes the combined force from Lorentz (electromagnetic) force and
-   !> Earth's gravitational force acting on a charged particle.
+   !> Combines electromagnetic (Lorentz) and gravitational forces to
+   !> simulate the helical trajectory of a charged particle in
+   !> crossed electric and magnetic fields with gravity.
+   type, extends(force_t) :: helical_motion_force
+      real :: magnetic_field(3)  !< Magnetic field vector B (T)
+      real :: electric_field(3)  !< Electric field vector E (V/m)
+      real :: gravity(3)         !< Gravity vector (m/s^2), currently unused
+   contains
+      procedure, pass(this) :: get_force => get_helical_motion_force
+   end type helical_motion_force
+
+contains
+   !> @brief Calculates the net force for helical motion simulation.
    !>
-   !> @param[in] charge     Electric charge of the particle (C).
-   !> @param[in] mass       Mass of the particle (kg).
-   !> @param[in] velocity   3D velocity vector of the particle (m/s).
-   !> @param[in] magnetic_field 3D magnetic field vector (T).
+   !> Computes the total force acting on a charged particle by combining
+   !> the Lorentz force (from electric and magnetic fields) and Earth's
+   !> gravitational force.
    !>
-   !> @return force 3D force vector (N).
-   pure function get_force(charge, mass, velocity, magnetic_field) result(force)
-      real, intent(in) :: charge
-      real, intent(in) :: mass
-      real, intent(in) :: velocity(3)
-      real, intent(in) :: magnetic_field(3)
-
-      real :: force(3)
-
-      force = lorentz_force(charge, velocity, magnetic_field) + earth_gravity_force(mass)
-
-   end function get_force
-
-   !> @brief Computes one timestep of trajectory evolution using velocity Verlet.
+   !> @param[in] this     The helical_motion_force instance with field config.
+   !> @param[in] particle The PointParticle to calculate forces on.
    !>
-   !> Updates the particle's mechanical state (position and velocity) by one
-   !> time step using the velocity Verlet integration scheme, which provides
-   !> better energy conservation than simple Euler integration.
-   !>
-   !> @param[in] magnetic_field 3D magnetic field vector (T).
-   !> @param[in] charge         Electric charge of the particle (C).
-   !> @param[in] mass           Mass of the particle (kg).
-   !> @param[in] initial_state  Starting mechanical state (position, velocity).
-   !> @param[in] delta_t        Time step size (s).
-   !>
-   !> @return final_state Updated mechanical state after one time step.
-   pure function calculate_trajectory_update(magnetic_field, charge, mass, initial_state, delta_t) result(final_state)
-      real, intent(in) :: charge
-      real, intent(in) :: mass
-      real, intent(in) :: magnetic_field(3)
-      real, intent(in) :: delta_t
-      type(MechanicalState), intent(in) :: initial_state
-      type(MechanicalState) :: final_state
-      real :: force(3)
-      real :: acceleration(3)
-
-      force = get_force(charge, mass, initial_state%velocity, magnetic_field)
-      acceleration = force/mass
-
-      ! do initial velocity and position update
-      final_state%velocity = initial_state%velocity + 0.5*acceleration*delta_t
-      final_state%position = initial_state%position + final_state%velocity*delta_t
-
-      force = get_force(charge, mass, final_state%velocity, magnetic_field)
-      acceleration = force/mass
-
-      ! do final velocity update
-      final_state%velocity = final_state%velocity + 0.5*acceleration*delta_t
-
-   end function calculate_trajectory_update
-
-   !> @brief Runs a helical motion simulation for a charged particle.
-   !>
-   !> Simulates the trajectory of a charged point particle in a constant
-   !> magnetic field over multiple time steps. The particle experiences
-   !> both the Lorentz force and gravitational force.
-   !>
-   !> @param[in] particle       PointParticle containing initial state and properties.
-   !> @param[in] magnetic_field 3D magnetic field vector (T).
-   !> @param[in] delta_t        Time step size (s).
-   !> @param[in] num_steps      Number of simulation steps to run.
-   !>
-   !> @return trajectory 2D array (num_steps x 3) of position coordinates.
-   pure function run_helical_motion_simulation(particle, magnetic_field, delta_t, num_steps) result(trajectory)
+   !> @return force The net 3D force vector (N).
+   function get_helical_motion_force(this, particle) result(force)
       type(PointParticle), intent(in) :: particle
-      real, intent(in) :: magnetic_field(3)
-      real, intent(in) :: delta_t
-      integer, intent(in) :: num_steps
-      integer :: i
-      type(MechanicalState) :: state
+      class(helical_motion_force), intent(in) :: this
+      type(lorentz_force_t) :: lorentz_force
+      type(earth_gravity_force_t) :: gravity_force
+      real :: force(3)
 
-      real, allocatable :: trajectory(:, :)
-      allocate (trajectory(num_steps, 3))
+      ! create lorentz force using set electric and magnetic field
+      lorentz_force = new_lorentz_force_t(this%electric_field, this%magnetic_field)
+      ! create earth gravity force
+      gravity_force = new_earth_gravity_force_t()
 
-      state%position = particle%pos
-      state%velocity = particle%vel
+      ! calculate net force by adding together lorentz and gravity
+      force = lorentz_force%get_force(particle) + gravity_force%get_force(particle)
 
-      do i = 1, num_steps
-         ! update state with new trajectory and append to list of results
-         state = calculate_trajectory_update(magnetic_field, particle%charge, particle%mass, state, delta_t)
-         trajectory(i, :) = state%position
-      end do
-   end function run_helical_motion_simulation
+   end function get_helical_motion_force
 
 end module helical_motion

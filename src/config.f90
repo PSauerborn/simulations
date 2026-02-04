@@ -4,8 +4,14 @@ module config
    implicit none
    private
 
-   public :: expect_char_value, expect_integer_value, expect_real_value, expect_real_array_value
+   public :: read_config_value
 
+   interface read_config_value
+      module procedure read_real_value
+      module procedure read_integer_value
+      module procedure read_char_value
+      module procedure read_real_array_value
+   end interface read_config_value
 contains
 
    !> @brief Extracts a required real value from a TOML table.
@@ -19,7 +25,7 @@ contains
    !> @param[out] val The extracted real value.
    !>
    !> @warning Terminates execution if the key is missing or value is invalid.
-   subroutine expect_real_value(table, key, val)
+   subroutine read_real_value(table, key, val)
       type(toml_table), pointer, intent(in) :: table
       character(*), intent(in) :: key
       real, intent(out) :: val
@@ -30,7 +36,7 @@ contains
          print *, 'Error: invalid real config value for ', key
          stop 1
       end if
-   end subroutine expect_real_value
+   end subroutine read_real_value
 
    !> @brief Extracts a required integer value from a TOML table.
    !>
@@ -43,7 +49,7 @@ contains
    !> @param[out] val The extracted integer value.
    !>
    !> @warning Terminates execution if the key is missing or value is invalid.
-   subroutine expect_integer_value(table, key, val)
+   subroutine read_integer_value(table, key, val)
       type(toml_table), pointer, intent(in) :: table
       character(*), intent(in) :: key
       integer, intent(out) :: val
@@ -54,7 +60,7 @@ contains
          print *, 'Error: invalid integer config value for ', key
          stop 1
       end if
-   end subroutine expect_integer_value
+   end subroutine read_integer_value
 
    !> @brief Extracts a required character string value from a TOML table.
    !>
@@ -68,7 +74,7 @@ contains
    !> @param[out] val The extracted character string (allocatable).
    !>
    !> @warning Terminates execution if the key is missing or value is invalid.
-   subroutine expect_char_value(table, key, val)
+   subroutine read_char_value(table, key, val)
       type(toml_table), pointer, intent(in) :: table
       character(*), intent(in) :: key
       character(len=:), allocatable, intent(out) :: val
@@ -79,7 +85,7 @@ contains
          print *, 'Error: invalid character config value for ', key
          stop 1
       end if
-   end subroutine expect_char_value
+   end subroutine read_char_value
 
    !> @brief Extracts a required real array from a TOML table.
    !>
@@ -94,7 +100,7 @@ contains
    !> @param[out] val The extracted real array (allocatable).
    !>
    !> @warning Terminates execution if the key is missing or value is invalid.
-   subroutine expect_real_array_value(table, key, val)
+   subroutine read_real_array_value(table, key, val)
       type(toml_table), pointer, intent(in) :: table
       type(toml_array), pointer :: temp
       character(*), intent(in) :: key
@@ -118,6 +124,6 @@ contains
          print *, 'Error: invalid array config value for ', key
          stop 1
       end if
-   end subroutine expect_real_array_value
+   end subroutine read_real_array_value
 
 end module config

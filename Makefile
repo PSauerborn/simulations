@@ -46,7 +46,7 @@ simulation_id ?= $(error 'simulation_id' is not set)
 
 .PHONY: run-simulation
 run-simulation:
-	docker build --pull -t simulations .
+	docker build --pull -t simulations -f Dockerfile.run .
 	docker run --rm \
 		-v ${working_dir}/output:/simulations/output \
 		simulations \

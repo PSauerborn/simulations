@@ -4,22 +4,33 @@ module types
 
    public :: MechanicalState, PointParticle, CSVOutput, new_point_particle, new_csv_output
 
+   !> @brief Represents the mechanical state of a particle.
+   !>
+   !> Contains the kinematic properties (position and velocity) of a
+   !> particle in 3D Cartesian coordinates.
    type :: MechanicalState
-      real :: position(3)
-      real :: velocity(3)
+      real :: position(3)  !< 3D position vector (m)
+      real :: velocity(3)  !< 3D velocity vector (m/s)
    end type MechanicalState
 
+   !> @brief Represents a point particle in 3D space.
+   !>
+   !> A particle with mechanical state (position, velocity), mass, and
+   !> optional electric charge for use in physics simulations.
    type :: PointParticle
-      real :: pos(3)
-      real :: vel(3)
-      real :: mass
-      real :: charge = 0.0
+      type(MechanicalState) :: state  !< Current position and velocity
+      real :: mass                     !< Particle mass (kg)
+      real :: charge = 0.0             !< Electric charge (C), default 0
    end type PointParticle
 
+   !> @brief Container for CSV file output data.
+   !>
+   !> Holds the filename, header row, and 2D array of values to be
+   !> written to a CSV file.
    type :: CSVOutput
-      character(len=:), allocatable :: filename
-      character(len=:), allocatable :: header(:)
-      real, allocatable :: values(:, :)
+      character(len=:), allocatable :: filename   !< Output file path
+      character(len=:), allocatable :: header(:)  !< Column header strings
+      real, allocatable :: values(:, :)           !< Data values (rows x columns)
    end type CSVOutput
 
 contains
@@ -63,12 +74,16 @@ contains
       real, intent(in) :: mass
       real, intent(in) :: charge
 
+      type(MechanicalState) :: initial_state
       type(PointParticle) :: p
 
-      p%pos = pos
-      p%vel = vel
+      initial_state%position = pos
+      initial_state%velocity = vel
+
       p%mass = mass
       p%charge = charge
+      p%state = initial_state
+
    end function new_point_particle
 
 end module types

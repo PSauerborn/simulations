@@ -1,11 +1,12 @@
 [parameters]
-initial_velocity = [2.0, 0.0, 5.0]
+initial_velocity = [1.0, 5.0, 5.0]
 initial_position = [0.0, 0.0, 0.0]
 magnetic_field = [0.5, 0.0, 0.0]
+electric_field = [0.0, 0.0, 0.0]
 mass = 1.0
 charge = 1.0
-delta_t = 0.01
-num_steps = 5000
+delta_t = 0.001
+num_steps = 50000
 
 [config]
 output_dir = "output"

@@ -105,9 +105,15 @@ def load_trajectory_data(out: SimulationOutput, output_dir: Path) -> pl.DataFram
     """
 
     path = output_dir / out.filename
-    df = pl.read_csv(path, has_header=False)
-    # rename columns to x, y, z
-    df = df.rename({"column_1": "x", "column_2": "y", "column_3": "z"})
+    df = pl.read_csv(
+        path,
+        infer_schema_length=None,
+        schema={
+            "x1": pl.Float64(),
+            "x2": pl.Float64(),
+            "x3": pl.Float64(),
+        },
+    )
     return df
 
 
@@ -167,9 +173,9 @@ def plot_trajectory(df: pl.DataFrame, output_dir: Path):
         output_dir: Directory where the plot images should be saved.
     """
 
-    xs = df["x"].to_numpy()
-    ys = df["y"].to_numpy()
-    zs = df["z"].to_numpy()
+    xs = df["x1"].to_numpy()
+    ys = df["x2"].to_numpy()
+    zs = df["x3"].to_numpy()
 
     # Calculate axis limits for consistent scaling across all views
     max_range = (

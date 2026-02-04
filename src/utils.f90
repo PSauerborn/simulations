@@ -5,7 +5,7 @@ module utils
    implicit none
    private ! hide all variables
 
-   public :: print_separator, write_csv ! export the function
+   public :: print_separator, write_csv, cross_product ! export the function
 
 contains ! required when defining functions in a module
 
@@ -61,5 +61,21 @@ contains ! required when defining functions in a module
 
       call f%close(status_ok)
    end subroutine write_csv
+
+   !> @brief Computes the cross product of two 3D vectors.
+   !>
+   !> @param[in] a First 3D vector.
+   !> @param[in] b Second 3D vector.
+   !>
+   !> @return output The cross product a × b as a 3D vector.
+   pure function cross_product(a, b) result(output)
+      real :: output(3)
+      real, intent(in) :: a(3)
+      real, intent(in) :: b(3)
+
+      output(1) = a(2)*b(3) - a(3)*b(2)
+      output(2) = a(3)*b(1) - a(1)*b(3)
+      output(3) = a(1)*b(2) - a(2)*b(1)
+   end function cross_product
 
 end module utils

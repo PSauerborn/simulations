@@ -1,11 +1,12 @@
 module integrators
    use types
    use forces
+   use utils
 
    implicit none
    private
 
-   public :: new_verlet_integrator, verlet_t
+   public :: new_verlet_integrator, verlet_t, new_boris_integrator, boris_t
 
    !> @brief Abstract base type for numerical integrators.
    !>
@@ -41,6 +42,18 @@ module integrators
    contains
       procedure, pass(this) :: integrate_step => verlet_step
    end type verlet_t
+
+   !> @brief Boris algorithm integrator for charged particles.
+   !>
+   !> Implements the Boris push algorithm, which is particularly well-suited
+   !> for simulating charged particle motion in magnetic fields. It exactly
+   !> conserves phase space volume and handles the velocity-dependent
+   !> Lorentz force correctly.
+   type, extends(integrator_t) :: boris_t
+      real :: magnetic_field(3)  !< Magnetic field vector B (T)
+   contains
+      procedure, pass(this) :: integrate_step => boris_step
+   end type boris_t
 
 contains
    !> @brief Performs a single Velocity Verlet integration step.
@@ -99,5 +112,64 @@ contains
       integrator%delta_t = delta_t
 
    end function new_verlet_integrator
+
+   !> @brief Performs a single Boris push integration step.
+   !>
+   !> Implements the Boris algorithm for integrating charged particle motion
+   !> in electromagnetic fields. The algorithm splits the velocity update into:
+   !>   1. Half acceleration from non-magnetic forces
+   !>   2. Rotation due to magnetic field (preserves |v|)
+   !>   3. Half acceleration from non-magnetic forces
+   !>   4. Position update
+   !>
+   !> This method is symplectic and handles the magnetic rotation exactly,
+   !> making it ideal for long-time simulations of magnetized plasmas.
+   !>
+   !> @param[in]    this     The boris_t integrator instance.
+   !> @param[inout] particle The PointParticle to integrate.
+   !> @param[in]    force    The force_t object for non-magnetic forces.
+   subroutine boris_step(this, particle, force)
+      class(boris_t), intent(in) :: this
+      class(force_t) :: force
+      type(PointParticle), intent(inout) :: particle
+
+      real :: a_linear(3)
+      real :: v_minus(3), v_prime(3), v_plus(3), t_vector(3), s_vector(3)
+
+      ! calculate force due to linear components
+      a_linear = force%get_force(particle)/particle%mass
+      ! do first velocity update
+      v_minus = particle%state%velocity + a_linear*(this%delta_t/2)
+
+      ! define tangent and secant vectors
+      t_vector = (particle%charge/particle%mass)*this%magnetic_field*(this%delta_t/2)
+      s_vector = (2*t_vector)/(1 + dot_product(t_vector, t_vector))
+
+      v_prime = v_minus + cross_product(v_minus, t_vector)
+      v_plus = v_minus + cross_product(v_prime, s_vector)
+
+      particle%state%velocity = v_plus + a_linear*(this%delta_t/2)
+      particle%state%position = particle%state%position + particle%state%velocity*this%delta_t
+
+   end subroutine boris_step
+
+   !> @brief Constructs a new Boris integrator.
+   !>
+   !> Factory function to create a boris_t integrator with the
+   !> specified time step and magnetic field.
+   !>
+   !> @param[in] delta_t        Time step for integration (s).
+   !> @param[in] magnetic_field 3D magnetic field vector (T).
+   !>
+   !> @return integrator A fully initialized boris_t instance.
+   function new_boris_integrator(delta_t, magnetic_field) result(integrator)
+      real, intent(in) :: delta_t
+      real, intent(in) :: magnetic_field(3)
+      type(boris_t) :: integrator
+
+      integrator%delta_t = delta_t
+      integrator%magnetic_field = magnetic_field
+
+   end function new_boris_integrator
 
 end module integrators

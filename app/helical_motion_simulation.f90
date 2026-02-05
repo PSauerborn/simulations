@@ -27,8 +27,8 @@ program helical_motion_simulation
 
    type(PointParticle) :: p
    type(CSVOutput) :: csv
-   type(verlet_t) :: integrator
-   type(helical_motion_force) :: force
+   type(boris_t) :: integrator
+   type(helical_motion_force_t) :: force
 
    ! read TOML configuration file and set values
    ! for all required parameters. this MUST be done
@@ -47,13 +47,18 @@ program helical_motion_simulation
    print *, 'Using initial position: ', initial_position
    print *, 'Using particle charge: ', charge
 
-   ! use verlet integrator
-   integrator = new_verlet_integrator(delta_t)
    ! create new point particle instance
    p = new_point_particle(initial_position, initial_velocity, mass, charge)
+
+   ! use boris integrator. this performs better for simulations
+   ! involving velocity-dependent forces that produce rotations
+   ! (such as a magnetic field).
+   integrator = new_boris_integrator(delta_t, magnetic_field)
+
    ! set properties of magnetic and electric field
-   force%magnetic_field = magnetic_field
-   force%electric_field = electric_field
+   ! IMPORTANT: magnetic field is set to 0 as we are using
+   ! the boris integrator, which already incorporates the magnetic field
+   force = new_helical_motion_force_t(electric_field, [0.0, 0.0, 0.0])
 
    ! perform numerical integration using verlet operator
    ! and helical motion force
